@@ -152,6 +152,11 @@ class Guard {
 		if (is_null($user) && ! is_null($recaller))
 		{
 			$user = $this->getUserByRecaller($recaller);
+
+			if ($user) {
+                $this->session->put($this->getName(), $user->getAuthIdentifier());
+                $this->fireLoginEvent($user, true);
+            }
 		}
 
 		return $this->user = $user;
@@ -434,13 +439,18 @@ class Guard {
 		// If we have an event dispatcher instance set we will fire an event so that
 		// any listeners will hook into the authentication events and run actions
 		// based on the login and logout events fired from the guard instances.
-		if (isset($this->events))
-		{
-			$this->events->fire('auth.login', array($user, $remember));
-		}
+		$this->fireLoginEvent($user, $remember);
 
 		$this->setUser($user);
 	}
+
+    protected function fireLoginEvent($user, $remember = false)
+    {
+        if (isset($this->events))
+        {
+            $this->events->fire('auth.login', [$user, $remember]);
+        }
+    }
 
 	/**
 	 * Update the session with the given ID.
